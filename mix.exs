@@ -10,7 +10,7 @@ defmodule Observables.MixProject do
       deps: deps(),
       description: description(),
       package: package(),
-      source_url: "https://github.com/m1dnight/observables"
+      source_url: "https://github.com/DriesDeBackker/observables-extended.git"
     ]
   end
 
@@ -43,7 +43,7 @@ defmodule Observables.MixProject do
       files: ["lib", "mix.exs", "README*", "LICENSE*"],
       maintainers: ["Dries De Backker"],
       licenses: ["MIT"],
-      links: %{"GitHub" => "https://github.com/m1dnight/observables"}
+      links: %{"GitHub" => "https://github.com/DriesDeBackker/observables-extended.git"}
     ]
 end
 end
