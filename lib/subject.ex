@@ -20,4 +20,8 @@ defmodule Observables.Subject do
     def next({_f, pid}, v) do
         GenObservable.send_event(pid, v) 
     end
+
+    def done({_f, pid}) do
+        GenObservable.stop(pid)
+    end
 end

@@ -1,4 +1,4 @@
-defmodule Observables.Operator.Zipn do
+defmodule Observables.Operator.ZipN do
   @moduledoc false
   use Observables.GenObservable
 

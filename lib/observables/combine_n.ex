@@ -1,10 +1,10 @@
-defmodule Observables.Operator.CombineLatestn do
+defmodule Observables.Operator.CombineN do
   @moduledoc false
   use Observables.GenObservable
   require Logger
 
-  def init(initials) do
-    Logger.debug("CombineLatestn: #{inspect(self())}")
+  def init([initials]) do
+    Logger.debug("CombineLatestN: #{inspect(self())}")
     {:ok, initials}
   end
 

@@ -56,7 +56,7 @@ defmodule Observables.GenObservable do
   end
 
   @doc """
-  This function is called by the GenServer process. Here we call the init function f the module provided
+  This function is called by the GenServer process. Here we call the init function of the module provided
   by the programmer.
   """
   def init({mod, args}) do
@@ -134,12 +134,35 @@ defmodule Observables.GenObservable do
           state.listeningto
           |> Enum.filter(fn sub -> sub != pid end)
 
+        # Terminate if no dependencies left to listen to.
         if count(new_subs) == 0 do
           Logger.warn("#{inspect(self())} all dependencies done, stopping ourselves.")
           cast(self(), :stop)
         end
 
         {:noreply, %{state | listeningto: new_subs}}
+
+      {:ok, :continue, mod_state} ->
+        Logger.debug("#{inspect(self())} going on with possibility of termination.")
+        # Remove observee.
+        new_subs =
+          state.listeningto
+          |> Enum.filter(fn sub -> sub != pid end)
+
+        # Terminate if no dependencies left to listen to.
+        if count(new_subs) == 0 do
+          Logger.warn("#{inspect(self())} all dependencies done, stopping ourselves.")
+          cast(self(), :stop)
+        end
+
+        {:noreply, %{state | listeningto: new_subs, state: mod_state}}
+
+      {:ok, :continue, :notermination, mod_state} -> 
+        Logger.debug("#{inspect(self())} going on without possibility of termination at this point.")
+        new_subs =
+          state.listeningto
+          |> Enum.filter(fn sub -> sub != pid end)
+        {:noreply, %{state | listeningto: new_subs, state: mod_state}}
     end
   end
 
@@ -149,11 +172,15 @@ defmodule Observables.GenObservable do
 
   def handle_cast(:stop, state) do
     Logger.warn("#{inspect(self())} am stopping")
-
     state.listeners
     |> Enum.map(fn obs -> cast(obs, {:dependency_stopping, self()}) end)
-
     {:stop, :normal, state}
+  end
+  def handle_cast({:stop, reason}, state) do
+    Logger.warn("#{inspect(self())} am stopping for reason #{inspect(reason)}")
+    state.listeners
+    |> Enum.map(fn obs -> cast(obs, {:dependency_stopping, self()}) end)
+    {:stop, reason, state}
   end
 
   def handle_cast({:event, value}, state) do
