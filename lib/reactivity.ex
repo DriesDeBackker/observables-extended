@@ -17,7 +17,7 @@ defmodule Observables.Reactivity do
 	This is similar to a behaviour with discrete updates in FRP.
 	"""
 	def liftapp2_update(obs1, obs2, fun) do
-		Obs.combine(obs1, obs2)
+		Obs.combinelatest(obs1, obs2)
 		|> Obs.map(fn {v1, v2} -> 
 			fun.(v1, v2) end)
 	end
@@ -29,7 +29,7 @@ defmodule Observables.Reactivity do
 	This is similar to a behaviour with discrete updates in FRP.
 	"""
 	def liftappn_update(obss, fun, inits \\ nil) do
-		Obs.combine_n(obss, inits)
+		Obs.combinelatest_n(obss, inits)
 		|> Obs.map(fn arg_tuple ->
 			apply(fun, Tuple.to_list(arg_tuple)) end)
 	end
@@ -65,7 +65,7 @@ defmodule Observables.Reactivity do
 		Only when all observables of this list have a value available is an output produced
 	"""
 	def liftapp_update_propagate(obss1, obss2, fun) do
-		Obs.combine_n_zip_m(obss1, obss2)
+		Obs.combinelatest_n_zip_m(obss1, obss2)
 		|> Obs.map(fn arg_tuple ->
 			apply(fun, Tuple.to_list(arg_tuple)) end)
 	end
@@ -81,7 +81,7 @@ defmodule Observables.Reactivity do
 		of values from observables in the first list.
 	"""
 	def liftapp_update_propagate_buffered(obss1, obss2, fun) do
-		Obs.combine_n_zip_m_buffered(obss1, obss2)
+		Obs.combinelatest_n_zip_m_buffered(obss1, obss2)
 		|> Obs.map(fn arg_tuple ->
 			apply(fun, Tuple.to_list(arg_tuple)) end)
 	end
@@ -99,7 +99,7 @@ defmodule Observables.Reactivity do
 		are combined with these values until the buffer is empty.
 	"""
 	def liftapp_update_propagate_buffered_propagating(obss1, obss2, fun) do
-		Obs.combine_n_zip_m_buffered_propagating(obss1, obss2)
+		Obs.combinelatest_n_zip_m_buffered_propagating(obss1, obss2)
 		|> Obs.map(fn arg_tuple ->
 			apply(fun, Tuple.to_list(arg_tuple)) end)
 	end
@@ -114,7 +114,7 @@ defmodule Observables.Reactivity do
 	This is similar to a behaviour with discrete updates in FRP.
 	"""
 	def liftappvar_update(obs, obss, fun, inits \\ nil) do
-		Obs.combine_var(obs, obss, inits)
+		Obs.combinelatest_var(obs, obss, inits)
 		|> Obs.map(fn arg_tuple ->
 			fun.(Tuple.to_list(arg_tuple)) end)
 	end

@@ -8,7 +8,7 @@ defmodule Observables.Operator.CombineLatestSilentBuffered do
     {:ok, {:c, init, :z, []}}
   end
 
-  def handle_event(value, {:c, c, :z, zs}=state) do
+  def handle_event(value, {:c, c, :z, zs}) do
     case {value, c, zs} do
       # We receive a value for the combination observable.
       {{:c, vc}, _, _} ->

@@ -1,17 +1,17 @@
-defmodule CombineLatest2Test do
+defmodule CombineLatestTest do
   use ExUnit.Case
   alias Observables.{Obs, Subject}
   require Logger
 
-  @tag :combinelatest2
-  test "Combine Latest 2" do
+  @tag :combinelatest
+  test "Combine Latest" do
     testproc = self()
 
     xs = Subject.create()
 
     ys = Subject.create()
 
-    Obs.combinelatest2(xs, ys, left: nil, right: nil)
+    Obs.combinelatest(xs, ys)
     |> Obs.map(fn v -> send(testproc, v) end)
 
     # Send first value, should not produce.

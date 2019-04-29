@@ -13,7 +13,7 @@ defmodule CombineLatestnTest do
 
     zs = Subject.create()
 
-    Obs.combinelatestn([xs, ys, zs])
+    Obs.combinelatest_n([xs, ys, zs])
     |> Obs.map(fn v -> send(testproc, v) end)
 
     # Send first value of xs, should not produce.

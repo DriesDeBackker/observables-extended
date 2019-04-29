@@ -1,6 +1,7 @@
 defmodule Observables.Operator.CombineLatestSilent do
   @moduledoc false
   use Observables.GenObservable
+  require Logger
 
   # silent == :left or :right
   def init([init]) do
@@ -22,6 +23,7 @@ defmodule Observables.Operator.CombineLatestSilent do
       # We do have a value for the combination observable 
       # and now received a value for the zip observable.
       {{:z, vz}, _} ->
+        Logger.error("Produce, bitch! #{inspect {c, vz}}")
         {:value, {c, vz}, {:c, c}}
     end
   end

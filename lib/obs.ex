@@ -547,7 +547,7 @@ defmodule Observables.Obs do
 
   More information: http://reactivex.io/documentation/operators/combinelatest.html
   """
-  def combinelatestsilent(cobs, zobs, opts \\ [init: nil]) do
+  def combinelatestsilent(cobs, zobs, opts \\ [init: nil, silent: :right]) do
     init = Keyword.get(opts, :init, nil)
 
     # We tag each value from the c-observable and the z-observable with their respective labels.
@@ -562,7 +562,7 @@ defmodule Observables.Obs do
       |> map(fn v -> {:z, v} end)
 
     # Start our combine_1_zip_1 observable.
-    {:ok, pid} = GenObservable.start(CombineSilent, [init])
+    {:ok, pid} = GenObservable.start(CombineLatestSilent, [init])
 
     # Make left and right send to us.
     f_c.(pid)
@@ -596,9 +596,9 @@ defmodule Observables.Obs do
     end
 
     # Build this primitive by composing simpler ones
-    cobs = combine_n(cobss, opts)
+    cobs = combinelatest_n(cobss, opts)
     zobs = zip_n(zobss)
-    combine_1_zip_1(cobs, zobs, [init: init])
+    combinelatestsilent(cobs, zobs, [init: init])
       |> map(fn {cv, zv} -> 
         List.to_tuple(Tuple.to_list(cv) ++ Tuple.to_list(zv)) end)
   end
@@ -617,7 +617,7 @@ defmodule Observables.Obs do
 
   More information: http://reactivex.io/documentation/operators/combinelatest.html
   """
-  def combinelatestsilent_silent_buffered(cobs, zobs, opts \\ [init: nil]) do
+  def combinelatestsilent_buffered(cobs, zobs, opts \\ [init: nil]) do
     init = Keyword.get(opts, :init, nil)
 
     # We tag each value from the c-observable and the z-observable with their respective labels.
@@ -666,9 +666,9 @@ defmodule Observables.Obs do
     end
 
     # Build this primitive by composing simpler ones
-    cobs = combine_n(cobss, opts)
+    cobs = combinelatest_n(cobss, opts)
     zobs = zip_n(zobss)
-    combine_latest_silent_buffered(cobs, zobs, [init: init])
+    combinelatestsilent_buffered(cobs, zobs, [init: init])
       |> map(fn {cv, zv} ->
         List.to_tuple(Tuple.to_list(cv) ++ Tuple.to_list(zv)) end)
   end
@@ -737,9 +737,9 @@ defmodule Observables.Obs do
     end
 
     # Build this primitive by composing simpler ones
-    cobs = combine_n(cobss, opts)
+    cobs = combinelatest_n(cobss, opts)
     zobs = zip_n(zobss)
-    combine_1_zip_1_buf(cobs, zobs, [init: init])
+    combinelatestsilent_buffered(cobs, zobs, [init: init])
       |> map(fn {cv, zv} -> 
         List.to_tuple(Tuple.to_list(cv) ++ Tuple.to_list(zv)) end)
   end

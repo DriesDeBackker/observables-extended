@@ -5,10 +5,10 @@ defmodule CombineLatestSilentTest do
 
   @tag :combinelatestsilent
   test "Combine Latest Silent" do
-    # 1      2      3     
     # 11          12     13     14     15
+    # 1      2      3               4
     # ===================================
-    # 1/11   2/11   3/12          
+    # 11/1   11/2   12/3            14/4
 
     testproc = self()
 
@@ -17,34 +17,31 @@ defmodule CombineLatestSilentTest do
 
     ys = Subject.create()
 
-    Obs.combinelatestsilent(xs, ys, left: nil, right: nil, silent: :right)
+    Obs.combinelatestsilent(ys, xs)
     |> Obs.map(fn v -> send(testproc, v) end)
 
     # Send first value, should not produce.
     Subject.next(xs, :x0)
-
     receive do
       x -> flunk("Mailbox was supposed to be empty, got: #{inspect(x)}")
     after
       100 -> :ok
     end
 
-    # Send second value, should  not produce because silent.
+    # Send second value, should not produce because silent.
     Subject.next(ys, :y0)
-
     receive do
       x -> flunk("Mailbox was supposed to be empty, got: #{inspect(x)}")
     after
       100 -> :ok
     end
 
-    # Update the left observable. Should produce with history.
+    # Update the non-silent observable. Should produce with history.
     Subject.next(xs, :x1)
-    assert_receive({:x1, :y0}, 5000, "did not get this message {:x1, :y0}!")
+    assert_receive({:y0, :x1}, 5000, "did not get this message {:y1, :x0}!")
 
     # Update the right observable, should be silent.
     Subject.next(ys, :y1)
-
     receive do
       x -> flunk("Mailbox was supposed to be empty, got: #{inspect(x)}")
     after
@@ -52,7 +49,6 @@ defmodule CombineLatestSilentTest do
     end
 
     Subject.next(ys, :x2)
-
     receive do
       x -> flunk("Mailbox was supposed to be empty, got: #{inspect(x)}")
     after
@@ -60,7 +56,6 @@ defmodule CombineLatestSilentTest do
     end
 
     Subject.next(ys, :y3)
-
     receive do
       x -> flunk("Mailbox was supposed to be empty, got: #{inspect(x)}")
     after
@@ -69,7 +64,7 @@ defmodule CombineLatestSilentTest do
 
     # Send a final value, should produce.
     Subject.next(xs, :x2)
-    assert_receive({:x2, :y3}, 1000, "did not get this message {:x2, :y3}!")
+    assert_receive({:y3, :x2}, 1000, "did not get this message {:y3, :x2}!")
 
     # Mailbox should be empty.
     receive do

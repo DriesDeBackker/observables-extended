@@ -1,10 +1,9 @@
-defmodule Observables.Operator.CombineSilentBufferedPropagating do
+defmodule Observables.Operator.CombineLatestSilentBufferedPropagating do
   @moduledoc false
   use Observables.GenObservable
 
   # silent == :left or :right
   def init([init]) do
-    Logger.debug("CombineSilentBufferedPropagating: #{inspect(self())}")
     {:ok, {:c, init, :z, []}}
   end
 
@@ -44,7 +43,7 @@ defmodule Observables.Operator.CombineSilentBufferedPropagating do
   end
 
   def handle_done(_pid, _state) do
-    Logger.debug("#{inspect(self())}: CombineSilentBufferedPropagating has one dead dependency, going on.")
+    Logger.debug("#{inspect(self())}: CombineLatestSilentBufferedPropagating has one dead dependency, going on.")
     {:ok, :continue}
   end
 end
