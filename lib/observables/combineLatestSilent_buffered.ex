@@ -1,10 +1,10 @@
-defmodule Observables.Operator.Combine1Zip1Buf do
+defmodule Observables.Operator.CombineLatestSilentBuffered do
   @moduledoc false
   use Observables.GenObservable
 
   # silent == :left or :right
   def init([init]) do
-    Logger.debug("Combine1Zip1Buf: #{inspect(self())}")
+    Logger.debug("CombineLatestSilentBuffered: #{inspect(self())}")
     {:ok, {:c, init, :z, []}}
   end
 
@@ -32,7 +32,7 @@ defmodule Observables.Operator.Combine1Zip1Buf do
   end
 
   def handle_done(_pid, _state) do
-    Logger.debug("#{inspect(self())}: Combine1Zip1Buf has one dead dependency, going on.")
+    Logger.debug("#{inspect(self())}: CombineLatestSilentBuffered has one dead dependency, going on.")
     {:ok, :continue}
   end
 end

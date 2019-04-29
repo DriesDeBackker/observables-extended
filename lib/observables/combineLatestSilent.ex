@@ -1,14 +1,14 @@
-defmodule Observables.Operator.Combine1Zip1 do
+defmodule Observables.Operator.CombineLatestSilent do
   @moduledoc false
   use Observables.GenObservable
 
   # silent == :left or :right
   def init([init]) do
-    Logger.debug("Combine1Zip1: #{inspect(self())}")
+    Logger.debug("CombineLatestSilent: #{inspect(self())}")
     {:ok, {:c, init}}
   end
 
-  def handle_event(value, {:c, c}=state) do
+  def handle_event(value, {:c, c} = state) do
     case {value, c} do
       # We receive a value for the combination observable.
       {{:c, vc}, _} ->
@@ -27,7 +27,7 @@ defmodule Observables.Operator.Combine1Zip1 do
   end
 
   def handle_done(_pid, _state) do
-    Logger.debug("#{inspect(self())}: Combine1Zip1 has one dead dependency, going on.")
+    Logger.debug("#{inspect(self())}: CombineLatestSilent has one dead dependency, going on.")
     {:ok, :continue}
   end
 end

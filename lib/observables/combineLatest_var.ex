@@ -1,10 +1,10 @@
-defmodule Observables.Operator.CombineVar do
+defmodule Observables.Operator.CombineLatestVar do
   @moduledoc false
   use Observables.GenObservable
   alias Observables.Obs
 
   def init([pids, inits, obstp]) do
-    Logger.debug("CombineLatestn: #{inspect(self())}")
+    Logger.debug("CombineLatestVar: #{inspect(self())}")
     # Define the index for the next observable.
     index = length(inits)
     # Create a map that maps observable pids to their indices.
@@ -47,18 +47,18 @@ defmodule Observables.Operator.CombineVar do
   end
 
   def handle_done(obstp, {valmap, indmap, cindex, obstp}) do
-  	Logger.debug("#{inspect(self())}: combinelatestvar has a dead observable stream, going on with possibility of termination.")
+  	Logger.debug("#{inspect(self())}: CombineLatestVar has a dead observable stream, going on with possibility of termination.")
   	{:ok, :continue, {valmap, indmap, cindex, nil}}
   end
   def handle_done(pid, {valmap, indmap, cindex, nil}) do
-  	Logger.debug("#{inspect(self())}: combinelatestvar has one dead dependency and already a dead observable stream, going on with possibility of termination.")
+  	Logger.debug("#{inspect(self())}: CombineLatestVar has one dead dependency and already a dead observable stream, going on with possibility of termination.")
   	index = Map.get(indmap, pid)
     new_indmap = Map.delete(indmap, pid)
     new_valmap = Map.delete(valmap, index)
   	{:ok, :continue, {new_valmap, new_indmap, cindex, nil}}
   end
   def handle_done(pid, {valmap, indmap, cindex, obstp}) do
-    Logger.debug("#{inspect(self())}: combinelatestvar has one dead dependency, but an active observable stream, going on without possibility of termination at this point.")
+    Logger.debug("#{inspect(self())}: CombineLatestVar has one dead dependency, but an active observable stream, going on without possibility of termination at this point.")
     index = Map.get(indmap, pid)
     new_indmap = Map.delete(indmap, pid)
     new_valmap = Map.delete(valmap, index)

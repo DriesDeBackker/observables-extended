@@ -1,9 +1,9 @@
-defmodule Observables.Operator.Combine2 do
+defmodule Observables.Operator.CombineLatest do
   @moduledoc false
   use Observables.GenObservable
 
   def init([left_initial, right_initial]) do
-    Logger.debug("CombineLatest2: #{inspect(self())}")
+    Logger.debug("CombineLatest: #{inspect(self())}")
     {:ok, {:left, left_initial, :right, right_initial}}
   end
 
@@ -41,7 +41,7 @@ defmodule Observables.Operator.Combine2 do
   end
 
   def handle_done(_pid, _state) do
-    Logger.debug("#{inspect(self())}: combinelatest2 has one dead dependency, going on.")
+    Logger.debug("#{inspect(self())}: CombineLatest has one dead dependency, going on.")
     {:ok, :continue}
   end
 end

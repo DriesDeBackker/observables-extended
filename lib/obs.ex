@@ -17,12 +17,12 @@ defmodule Observables.Obs do
     Chunk,
     Scan,
     Take,
-    Combine2,
-    CombineN,
-    CombineVar,
-    Combine1Zip1,
-    Combine1Zip1Buf,
-    Combine1Zip1Bufprop,
+    CombineLatest,
+    CombineLatestN,
+    CombineLatestVar,
+    CombineLatestSilent,
+    CombineLatestSilentBuffered,
+    CombineLatestSilentBufferedPropagating,
   }
 
   alias Enum
@@ -32,7 +32,7 @@ defmodule Observables.Obs do
   # GENERATORS ###################################################################
 
   @doc """
-  from_pid/1 can be considered to be a subject. Any process that implements the GenObservable interface can be used a subject, actually.
+  from_pid/1 can be considered to be a subject. Any process that implements the GenObservable interface can be used as a subject, actually.
   Example:
   Spawn a subject using the `Subject` module.
   {:ok, pid1} = GenObservable.spawn_supervised(Subject, 0)
@@ -133,6 +133,19 @@ defmodule Observables.Obs do
      end, pid}
   end
 
+  @doc """
+  Unzip an observable whose values are tuples {left, right}.
+  """
+  def unzip(obs) do
+    lobs =
+      obs
+      |> map(fn {l, _r} -> l end)
+    robs = 
+      obs
+      |> map(fn {_l, r} -> r end)
+    {lobs, robs}
+  end
+
   def zip_n(obss) do
     # We tag each value from an observee with its respective index
     indices = 0..(length(obss)-1)
@@ -141,7 +154,7 @@ defmodule Observables.Obs do
         #|> Observables.Obs.inspect()
         |> map(fn v -> {index, v} end) end)
 
-    # Start our Zipn observable.
+    # Start our ZipN observable.
     {:ok, pid} = GenObservable.start(ZipN, [length(obss)])
 
     # Make the observees send to us.
@@ -195,11 +208,17 @@ defmodule Observables.Obs do
     observable_fn_1.(pid)
     observable_fn_2.(pid)
 
-    # Creat the continuation.
+    # Create the continuation.
     {fn observer ->
        GenObservable.send_to(pid, observer)
      end, pid}
   end
+
+  @doc """
+  Merge a list of observables instead of just two.
+  """
+  def merge([{_obs_fn, _ppid} = obssh | []]), do: obssh
+  def merge([{_obs_fn, _ppid} = obssh | obsst]), do: merge(obssh, merge(obsst))
 
   @doc """
   Applies a given function to each value produces by the dependency observable.
@@ -231,7 +250,7 @@ defmodule Observables.Obs do
 
     observable_fn.(pid)
 
-    # Creat the continuation.
+    # Create the continuation.
     {fn observer ->
        GenObservable.send_to(pid, observer)
      end, pid}
@@ -264,7 +283,7 @@ defmodule Observables.Obs do
   def filter({observable_fn, _parent_pid}, f) do
     {:ok, pid} = GenObservable.start_link(Filter, [f])
     observable_fn.(pid)
-    # Creat the continuation.
+    # Create the continuation.
     {fn observer ->
        GenObservable.send_to(pid, observer)
      end, pid}
@@ -375,6 +394,10 @@ defmodule Observables.Obs do
      end, pid}
   end
 
+  def count(obs, default \\ 0) do
+    scan(obs, fn _v, n -> n + 1 end, default)
+  end
+
   @doc """
   Takes the n first element of the observable, and then stops.
 
@@ -403,7 +426,7 @@ defmodule Observables.Obs do
 
   More information: http://reactivex.io/documentation/operators/combinelatest.html
   """
-  def combine_2(l, r, opts \\ [left: nil, right: nil]) do
+  def combinelatest(l, r, opts \\ [left: nil, right: nil]) do
     left_initial = Keyword.get(opts, :left)
     right_initial = Keyword.get(opts, :right)
 
@@ -419,7 +442,7 @@ defmodule Observables.Obs do
       |> map(fn v -> {:right, v} end)
 
     # Start our combinelatest2 observable.
-    {:ok, pid} = GenObservable.start(Combine2, [left_initial, right_initial])
+    {:ok, pid} = GenObservable.start(CombineLatest, [left_initial, right_initial])
 
     # Make left and right send to us.
     f_l.(pid)
@@ -436,7 +459,7 @@ defmodule Observables.Obs do
   Takes a list of observables and merges them together 
   by combining the newly received value of an observable with the latest values from the others.
   """
-  def combine_n(obss, opts \\ [inits: nil]) do
+  def combinelatest_n(obss, opts \\ [inits: nil]) do
     inds = 0..(length(obss)-1)
     #Create list of nils as initial values when no initial values given as option.
     inits = Keyword.get(opts, :inits)
@@ -454,7 +477,7 @@ defmodule Observables.Obs do
         |> map(fn v -> {index, v} end) end)
 
     # Start our CombineLatestn observable.
-    {:ok, pid} = GenObservable.start(CombineN, [inits])
+    {:ok, pid} = GenObservable.start(CombineLatestN, [inits])
 
     # Make the observees send to us.
     tagged |> Enum.each(fn {obs_f, _obs_pid} -> obs_f.(pid) end)
@@ -472,7 +495,7 @@ defmodule Observables.Obs do
   We add these observables as new incoming dependencies and initialize them with the given value..
   At any given moment, we combine the newly received value of an observable with the latest values of other current observables.
   """
-  def combine_var(obs, obss, opts \\ [inits: nil]) do
+  def combinelatest_var(obs, obss, opts \\ [inits: nil]) do
     inds = 0..(length(obss)-1)
     # Create list of nils as initial values when no initial values given as option.
     inits = Keyword.get(opts, :inits)
@@ -499,7 +522,7 @@ defmodule Observables.Obs do
     inds_inits = Enum.zip(inds, inits)
 
     # Start our CombineLatestVar observable.
-    {:ok, pid} = GenObservable.start(CombineVar, [pids_inds, inds_inits, tho_pid])
+    {:ok, pid} = GenObservable.start(CombineLatestVar, [pids_inds, inds_inits, tho_pid])
 
     # Make the observees send to us.
     tagged |> Enum.each(fn {obs_f, _obs_pid} -> obs_f.(pid) end)
@@ -524,7 +547,7 @@ defmodule Observables.Obs do
 
   More information: http://reactivex.io/documentation/operators/combinelatest.html
   """
-  def combine_1_zip_1(cobs, zobs, opts \\ [init: nil]) do
+  def combinelatestsilent(cobs, zobs, opts \\ [init: nil]) do
     init = Keyword.get(opts, :init, nil)
 
     # We tag each value from the c-observable and the z-observable with their respective labels.
@@ -539,7 +562,7 @@ defmodule Observables.Obs do
       |> map(fn v -> {:z, v} end)
 
     # Start our combine_1_zip_1 observable.
-    {:ok, pid} = GenObservable.start(Combine1Zip1, [init])
+    {:ok, pid} = GenObservable.start(CombineSilent, [init])
 
     # Make left and right send to us.
     f_c.(pid)
@@ -552,7 +575,7 @@ defmodule Observables.Obs do
   end
 
   @doc """
-  Generalization of combine_1_zip_1 to n observables to 'combine latest' and m observables to zip.
+  Generalization of combinelatestsilent to n observables to 'combine latest' and m observables to zip.
 
   E.g.
   c1: -------------> 1 ----------> 2 ------> 3 -->
@@ -560,7 +583,7 @@ defmodule Observables.Obs do
   z1: a -------> b----------- c --------> d ----->
   z2: --> @ ------> $ ----> % -----> & ---------->
   =
-  r:  ------------------------>1Bc%------>2Bd& -->
+  r:  ------------------------>1Bc%------->2Bd& ->
 
   More information: http://reactivex.io/documentation/operators/combinelatest.html
   """
@@ -594,7 +617,7 @@ defmodule Observables.Obs do
 
   More information: http://reactivex.io/documentation/operators/combinelatest.html
   """
-  def combine_1_zip_1_buf(cobs, zobs, opts \\ [init: nil]) do
+  def combinelatestsilent_silent_buffered(cobs, zobs, opts \\ [init: nil]) do
     init = Keyword.get(opts, :init, nil)
 
     # We tag each value from the c-observable and the z-observable with their respective labels.
@@ -609,7 +632,7 @@ defmodule Observables.Obs do
       |> map(fn v -> {:z, v} end)
 
     # Start our combine_1_zip_1 observable.
-    {:ok, pid} = GenObservable.start(Combine1Zip1Buf, [init])
+    {:ok, pid} = GenObservable.start(CombineLatestSilentBuffered, [init])
 
     # Make left and right send to us.
     f_c.(pid)
@@ -622,7 +645,7 @@ defmodule Observables.Obs do
   end
 
   @doc """
-  Generalization of combine_1_zip_1_buf to n observables to 'combine latest' and m observables to zip.
+  Generalization of combinelatestsilent_silent_buffered to n observables to 'combine latest' and m observables to zip.
 
   E.g.
   c1: -------------> 1 --------------> 2 --------------------> 3
@@ -634,7 +657,7 @@ defmodule Observables.Obs do
 
   More information: http://reactivex.io/documentation/operators/combinelatest.html
   """
-  def combine_n_zip_m_buf(cobss, zobss, opts \\ [init: nil]) do
+  def combine_n_zip_m_buffered(cobss, zobss, opts \\ [init: nil]) do
     # Process optional initial values
     inits = Keyword.get(opts, :inits, nil)
     init = case inits do
@@ -645,7 +668,7 @@ defmodule Observables.Obs do
     # Build this primitive by composing simpler ones
     cobs = combine_n(cobss, opts)
     zobs = zip_n(zobss)
-    combine_1_zip_1_buf(cobs, zobs, [init: init])
+    combine_latest_silent_buffered(cobs, zobs, [init: init])
       |> map(fn {cv, zv} ->
         List.to_tuple(Tuple.to_list(cv) ++ Tuple.to_list(zv)) end)
   end
@@ -665,7 +688,7 @@ defmodule Observables.Obs do
 
   More information: http://reactivex.io/documentation/operators/combinelatest.html
   """
-  def combine_1_zip_1_bufprop(cobs, zobs, opts \\ [init: nil]) do
+  def combinelatestsilent_buffered_propagating(cobs, zobs, opts \\ [init: nil]) do
     init = Keyword.get(opts, :init, nil)
 
     # We tag each value from the c-observable and the z-observable with their respective labels.
@@ -679,8 +702,8 @@ defmodule Observables.Obs do
       #|> Observables.Obs.inspect()
       |> map(fn v -> {:z, v} end)
 
-    # Start our combine_1_zip_1 observable.
-    {:ok, pid} = GenObservable.start(Combine1Zip1Bufprop, [init])
+    # Start our combine_silent_buffered_propagating observable.
+    {:ok, pid} = GenObservable.start(CombineLatestSilentBufferedPropagating, [init])
 
     # Make left and right send to us.
     f_c.(pid)
@@ -693,7 +716,7 @@ defmodule Observables.Obs do
   end
 
   @doc """
-  Generalization of combine_1_zip_1_bufprop to n observables to 'combine latest' and m observables to zip.
+  Generalization of combinelatestsilent_buffered_propagating to n observables to 'combine latest' and m observables to zip.
 
   E.g.
   c1: ----------------> 1 ------------------------> 2 ---------------> 3
@@ -705,7 +728,7 @@ defmodule Observables.Obs do
 
   More information: http://reactivex.io/documentation/operators/combinelatest.html
   """
-  def combine_n_zip_m_bufprop(cobss, zobss, opts \\ [init: nil]) do
+  def combine_n_zip_m_buffered_propagating(cobss, zobss, opts \\ [init: nil]) do
     # Process optional initial values
     inits = Keyword.get(opts, :inits, nil)
     init = case inits do

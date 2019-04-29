@@ -1,4 +1,4 @@
-defmodule Observables.Operator.CombineN do
+defmodule Observables.Operator.CombineLatestN do
   @moduledoc false
   use Observables.GenObservable
   require Logger
@@ -18,7 +18,7 @@ defmodule Observables.Operator.CombineN do
   end
 
   def handle_done(_pid, _state) do
-    Logger.debug("#{inspect(self())}: combinelatestn has one dead dependency, going on.")
+    Logger.debug("#{inspect(self())}: CombineLatestN has one dead dependency, going on.")
     {:ok, :continue}
   end
 

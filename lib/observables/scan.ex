@@ -4,7 +4,6 @@ defmodule Observables.Operator.Scan do
 
   def init([proc, default]) do
     Logger.debug("Scan: #{inspect(self())}")
-    # We don't keep state in merge.
     {:ok, %{:proc => proc, :intermediate => default}}
   end
 

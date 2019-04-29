@@ -41,10 +41,11 @@ defmodule Observables.Operator.ZipVar do
     # Get the first value of every queue (represented as a list) or nil if that queue is empty.
   	firsts = new_qmap
   		|> Map.values
-     	|> Enum.map(fn vs -> List.first(vs) end)
+     	|> Enum.map(fn vs -> 
+        if Enum.empty?(vs), do: :empty, else: List.first(vs) end)
     # Check if received from all dependencies.
     # If so, produce a new value from the first elements and pop these from their respective queues.
-    if Enum.any?(firsts, fn fst -> fst == nil end) do
+    if Enum.any?(firsts, fn fst -> fst == :empty end) do
   		{:novalue, {new_qmap, indmap, cindex, obstp}}
   	else
  			new_qmap

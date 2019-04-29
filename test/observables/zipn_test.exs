@@ -3,15 +3,14 @@ defmodule ZipnTest do
   alias Observables.{Obs, Subject}
   require Logger
 
-  @tag :zipn
-  test "zipn" do
+  test "zipn (1)" do
     testproc = self()
 
     xs = Subject.create()
     ys = Subject.create()
     zs = Subject.create()
 
-    Obs.zipn([xs, ys, zs])
+    Obs.zip_n([xs, ys, zs])
     |> Obs.map(fn v -> send(testproc, v) end)
 
     # Send first value of xs, should not produce.
@@ -77,8 +76,33 @@ defmodule ZipnTest do
     receive do
       x -> flunk("Mailbox was supposed to be empty, got: #{inspect(x)}")
     after
-      0 -> :ok
+      500 -> :ok
     end
   end
+
+  test "zipn (2)" do
+    testproc = self()
+
+    xs = Subject.create()
+
+    Obs.zip_n([xs])
+    |> Obs.map(fn v -> send(testproc, v) end)
+
+    # Send first value of xs, should produce
+    Subject.next(xs, :x0)
+    assert_receive({:x0}, 1000, "did not get this message!")
+
+    # Send second value of xs, should produce
+    Subject.next(xs, :x1)
+    assert_receive({:x1}, 1000, "did not get this message!")
+
+    # Should not receive anything thereafter.
+    receive do
+      x -> flunk("Mailbox was supposed to be empty, got: #{inspect(x)}")
+    after
+      500 -> :ok
+    end
+  end
+
 
 end
