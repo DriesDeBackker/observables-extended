@@ -1,6 +1,6 @@
 # Observables Extended
 
-Observables in the spirit of Reactive Extensions for Elixir, extended with advanced primitives for combination reactive programming.
+Observables in the spirit of Reactive Extensions for Elixir, extended with advanced primitives for combination and reactive programming.
 
 ## Installation
 
