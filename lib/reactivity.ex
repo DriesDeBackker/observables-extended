@@ -3,8 +3,7 @@ defmodule Observables.Reactivity do
 	alias Observables.Obs
 
 	@doc """
-	* Lifts a unary function and applies it to an observable.
-	(Essentially a wrapper for the map operator on observables.)
+	* Lifts a unary function and applies it to an observable (essentially a wrapper for the map observable)
 	"""
 	def liftapp(obs, fun) do
 		obs |> Obs.map(fun)

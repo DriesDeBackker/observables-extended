@@ -39,8 +39,10 @@ defmodule Observables.Obs do
   {:ok, pid1} = GenObservable.spawn_supervised(Subject, 0)
 
   Print out each value that the subject produces.
+  ```
   Obs.from_pid(pid1)
   |> Obs.print()
+  ```
 
   Send an event to the subject.
   GenObservable.send_event(pid1, :value)
@@ -106,8 +108,8 @@ defmodule Observables.Obs do
   # CONSUMER AND PRODUCER ########################################################
 
   @doc """
-  Combine the emissions of multiple Observables together via a specified function 
-  and emit single items for each combination based on the results of this function.
+  Combine the emissions of multiple Observables together 
+  and emit single items for each combination.
 
   More information: http://reactivex.io/documentation/operators/zip.html
   """
@@ -147,6 +149,10 @@ defmodule Observables.Obs do
     {lobs, robs}
   end
 
+  @doc """
+  Combine the emissions of a list of observables together 
+  and emit single items for each combination.
+  """
   def zip_n(obss) do
     # We tag each value from an observee with its respective index
     indices = 0..(length(obss)-1)
@@ -167,6 +173,12 @@ defmodule Observables.Obs do
      end, pid}
   end
 
+  @doc """
+  Combine the emissions of a list of observables together 
+  and emit single items for each combination.
+
+  Takes an extra higher order observable carrying new observables to zip with.
+  """
   def zip_var(obs, obss) do
     # We tag each value from an observee with a :newval tag and its respective index
     inds = 0..(length(obss)-1)
@@ -449,10 +461,12 @@ defmodule Observables.Obs do
   reuses the last value from the other.
 
   E.g.
+  ```
   1 -> 2 ------> 3
   A -----> B ------> C 
   =
   1A --> 2A -> 2B -> 3B -> 3C
+  ```
 
   More information: http://reactivex.io/documentation/operators/combinelatest.html
   """
@@ -521,7 +535,7 @@ defmodule Observables.Obs do
   @doc """
   Generalization of Combinelatestn to a number of observables that can be subject to change.
   Takes a list of initial observables and one higher order observable.
-  Values of the latter are tuples {observable, initial_value}. 
+  Values of the latter are tuples `{observable, initial_value}`. 
   We add these observables as new incoming dependencies and initialize them with the given value..
   At any given moment, we combine the newly received value of an observable with the latest values of other current observables.
   """
@@ -570,10 +584,12 @@ defmodule Observables.Obs do
   The combine observable will never trigger the production of a new value, but will instead update 'silently'.
 
   E.g.
+  ```
   1 -> 2 ------> 3
   A -----> B ------> C 
   =
   1A -> 2A ----> 3B
+  ```
 
   More information: http://reactivex.io/documentation/operators/combinelatest.html
   """
@@ -608,12 +624,14 @@ defmodule Observables.Obs do
   Generalization of combinelatestsilent to n observables to 'combine latest' and m observables to zip.
 
   E.g.
+  ```
   c1: -------------> 1 ----------> 2 ------> 3 -->
   c2: ------> A --------> B -------------------> C 
   z1: a -------> b----------- c --------> d ----->
   z2: --> @ ------> $ ----> % -----> & ---------->
   =
   r:  ------------------------>1Bc%------->2Bd& ->
+  ```
 
   More information: http://reactivex.io/documentation/operators/combinelatest.html
   """
@@ -640,10 +658,12 @@ defmodule Observables.Obs do
   The combine observable will never trigger an update, but will instead update 'silently' by replacing its latest value.
 
   E.g.
+  ```
   1 -> 2 ------> 3 --> 4
   -----> A ------> C -->
   =
   -------------> 1A -> 2C
+  ```
 
   More information: http://reactivex.io/documentation/operators/combinelatest.html
   """
@@ -678,12 +698,14 @@ defmodule Observables.Obs do
   Generalization of combinelatestsilent_silent_buffered to n observables to 'combine latest' and m observables to zip.
 
   E.g.
+  ```
   c1: -------------> 1 --------------> 2 --------------------> 3
   c2: ------> A --------> B --------------------> C ----------->
   z1: a -------> b-----------------> c --------------> d ------>
   z2: --> @ ------> $ ------> % -------------> & -------------->
   =
   r:  -----------------------------> 1Ba@ -----------> 2Cb$ --->
+  ```
 
   More information: http://reactivex.io/documentation/operators/combinelatest.html
   """
@@ -711,10 +733,12 @@ defmodule Observables.Obs do
   We will combine the whole zip buffer at once with this combine value.
 
   E.g.
+  ```
   1 -> 2 ------> 3 ---> 4
   -----> A --> C -------->
   =
   -----> 1A-2A --> 3C -> 4C
+  ```
 
   More information: http://reactivex.io/documentation/operators/combinelatest.html
   """
@@ -749,12 +773,14 @@ defmodule Observables.Obs do
   Generalization of combinelatestsilent_buffered_propagating to n observables to 'combine latest' and m observables to zip.
 
   E.g.
+  ```
   c1: ----------------> 1 ------------------------> 2 ---------------> 3
   c2: ------> A ------------------> B --------------------> C --------->
   z1: a -------> b-------------------------> c --------------> d ------>
   z2: --> @ ------> $ ---------------> % -------------> & ------------->
   =
   r:  -----------------> 1Aa@ 1Ab$ --------> 1Bc% -----------> 2Cd& --->
+  ```
 
   More information: http://reactivex.io/documentation/operators/combinelatest.html
   """
