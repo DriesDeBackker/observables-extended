@@ -3,7 +3,6 @@ defmodule Observables.Operator.CombineLatestSilent do
   use Observables.GenObservable
   require Logger
 
-  # silent == :left or :right
   def init([init]) do
     Logger.debug("CombineLatestSilent: #{inspect(self())}")
     {:ok, {:c, init}}

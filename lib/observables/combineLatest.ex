@@ -8,7 +8,7 @@ defmodule Observables.Operator.CombineLatest do
   end
 
   def handle_event(value, state) do
-    Logger.debug("Combinelatest2: received value #{inspect value}")
+    Logger.debug("Combinelatest: received value #{inspect value}")
     case {value, state} do
       # No values yet.
       {{:left, vl}, {:left, nil, :right, nil}} ->

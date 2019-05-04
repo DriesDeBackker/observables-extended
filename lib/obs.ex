@@ -8,6 +8,7 @@ defmodule Observables.Obs do
     ZipN,
     ZipVar,
     Merge,
+    Rotate,
     Map,
     Distinct,
     Each,
@@ -127,7 +128,7 @@ defmodule Observables.Obs do
     f_l.(pid)
     f_r.(pid)
 
-    # Creat the continuation.
+    # Create the continuation.
     {fn observer ->
        GenObservable.send_to(pid, observer)
      end, pid}
@@ -198,7 +199,7 @@ defmodule Observables.Obs do
 
   @doc """
   Combine two observables into a single observable that will emit the events 
-  produced by the inputs.
+  produced by the inputs in a fifo fashion.
 
   More information: http://reactivex.io/documentation/operators/merge.html
   """
@@ -215,10 +216,39 @@ defmodule Observables.Obs do
   end
 
   @doc """
-  Merge a list of observables instead of just two.
+  Combine a list of observables into a single observable that will emit the events 
+  produced by the inputs in a fifo fashion.
   """
   def merge([{_obs_fn, _ppid} = obssh | []]), do: obssh
   def merge([{_obs_fn, _ppid} = obssh | obsst]), do: merge(obssh, merge(obsst))
+
+  @doc """
+  Combine a list of observables into a single observable that will emit the events
+  produced by the inputs in a round-robin fashion.
+  """
+  def rotate(obss) do
+    n = length(obss)
+    # Tag all the observables with an index and a :newvalue tag.
+    tobss = obss
+    |> Enum.zip(0..n-1)
+    |> Enum.map(
+      fn {obs, i} ->
+        obs 
+        |> map(fn v -> {:newvalue, i, v} end) 
+      end)
+
+    # Start our Rotate observable.
+    {:ok, pid} = GenObservable.start_link(Rotate, [n])
+
+    # Make the observables send to us.
+    tobss 
+    |> Enum.each(fn {obs_f, _obs_pid} -> obs_f.(pid) end)
+
+    #Create the continuation
+    {fn observer -> 
+      GenObservable.send_to(pid, observer) 
+    end, pid}
+  end
 
   @doc """
   Applies a given function to each value produces by the dependency observable.
@@ -230,7 +260,7 @@ defmodule Observables.Obs do
 
     observable_fn.(pid)
 
-    # Creat the continuation.
+    # Create the continuation.
     {fn observer ->
        GenObservable.send_to(pid, observer)
      end, pid}
@@ -587,7 +617,7 @@ defmodule Observables.Obs do
 
   More information: http://reactivex.io/documentation/operators/combinelatest.html
   """
-  def combine_n_zip_m(cobss, zobss, opts \\ [inits: nil]) do
+  def combinelatest_n_zip_m(cobss, zobss, opts \\ [inits: nil]) do
     # Process optional initial values
     inits = Keyword.get(opts, :inits, nil)
     init = case inits do
@@ -657,7 +687,7 @@ defmodule Observables.Obs do
 
   More information: http://reactivex.io/documentation/operators/combinelatest.html
   """
-  def combine_n_zip_m_buffered(cobss, zobss, opts \\ [init: nil]) do
+  def combinelatest_n_zip_m_buffered(cobss, zobss, opts \\ [init: nil]) do
     # Process optional initial values
     inits = Keyword.get(opts, :inits, nil)
     init = case inits do
@@ -728,7 +758,7 @@ defmodule Observables.Obs do
 
   More information: http://reactivex.io/documentation/operators/combinelatest.html
   """
-  def combine_n_zip_m_buffered_propagating(cobss, zobss, opts \\ [init: nil]) do
+  def combinelatest_n_zip_m_buffered_propagating(cobss, zobss, opts \\ [init: nil]) do
     # Process optional initial values
     inits = Keyword.get(opts, :inits, nil)
     init = case inits do
