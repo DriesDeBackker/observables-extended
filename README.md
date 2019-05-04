@@ -1,6 +1,6 @@
-# BQuarp
+# Observables Extended
 
-A reactive library built on top of reactive extensions (observables) with flexible consistency guarantees drawing from Quarp.
+Observables in the spirit of Reactive Extensions for Elixir, extended with advanced primitives for combination reactive programming.
 
 ## Installation
 

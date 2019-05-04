@@ -585,10 +585,10 @@ defmodule Observables.Obs do
 
   E.g.
   ```
-  1 -> 2 ------> 3
-  A -----> B ------> C 
+  1 ---> 2 -------> 3 ------>
+  A -------> B -----------> C 
   =
-  1A -> 2A ----> 3B
+  1A ---> 2A -----> 3B ----->
   ```
 
   More information: http://reactivex.io/documentation/operators/combinelatest.html
@@ -659,13 +659,11 @@ defmodule Observables.Obs do
 
   E.g.
   ```
-  1 -> 2 ------> 3 --> 4
-  -----> A ------> C -->
+  1 -> 2 ------> 3 ---> 4
+  -----> A ------> C --->
   =
   -------------> 1A -> 2C
   ```
-
-  More information: http://reactivex.io/documentation/operators/combinelatest.html
   """
   def combinelatestsilent_buffered(cobs, zobs, opts \\ [init: nil]) do
     init = Keyword.get(opts, :init, nil)
@@ -706,8 +704,6 @@ defmodule Observables.Obs do
   =
   r:  -----------------------------> 1Ba@ -----------> 2Cb$ --->
   ```
-
-  More information: http://reactivex.io/documentation/operators/combinelatest.html
   """
   def combinelatest_n_zip_m_buffered(cobss, zobss, opts \\ [init: nil]) do
     # Process optional initial values
@@ -739,8 +735,6 @@ defmodule Observables.Obs do
   =
   -----> 1A-2A --> 3C -> 4C
   ```
-
-  More information: http://reactivex.io/documentation/operators/combinelatest.html
   """
   def combinelatestsilent_buffered_propagating(cobs, zobs, opts \\ [init: nil]) do
     init = Keyword.get(opts, :init, nil)
