@@ -6,7 +6,7 @@ defmodule Observables.GenObservable do
   alias Observables.GenObservable
   use GenServer
 
-  defstruct listeners: [], listeningto: [], last: [], state: %{}, module: nil
+  defstruct listeners: [], listeningto: [], last: nil, state: %{}, module: nil
 
   @callback init(args :: term) :: any
 
@@ -74,6 +74,10 @@ defmodule Observables.GenObservable do
   # Dependencies #
   ################
 
+  def handle_call({:get_last}, _from, %{last: last}=state) do
+    {:reply, last, state}
+  end
+
   def handle_cast({:send_to, pid}, state) do
     {:noreply, %{state | listeners: [pid | state.listeners]}}
   end
@@ -102,7 +106,7 @@ defmodule Observables.GenObservable do
     state.listeners
     |> Enum.map(fn obs -> GenObservable.send_event(obs, value) end)
 
-    {:noreply, state}
+    {:noreply, %{state | last: value}}
   end
 
   def handle_cast({:dependency_stopping, pid}, state) do
@@ -249,6 +253,10 @@ defmodule Observables.GenObservable do
   """
   def send_event(consumer, value) do
     cast(consumer, {:event, value})
+  end
+
+  def get_last(producer) do
+    call(producer, {:get_last})
   end
 
   @doc """

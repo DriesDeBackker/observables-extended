@@ -2,6 +2,7 @@ defmodule Observables.Obs do
   alias Observables.GenObservable
   alias Observables.Operator.{
     Switch,
+    SwitchRepeat,
     FromEnum,
     Range,
     Zip,
@@ -70,6 +71,13 @@ defmodule Observables.Obs do
     {fn observer ->
        GenObservable.send_to(pid, observer)
      end, pid}
+  end
+
+  @doc """
+  Returns the last emitted value of the Observable.
+  """
+  def last({_obs_fn, obs_pid}) do
+    GenObservable.get_last(obs_pid)
   end
 
   @doc """
@@ -362,13 +370,34 @@ defmodule Observables.Obs do
   Convert an Observable that emits Observables into a single Observable that 
   emits the items emitted by the most-recently-emitted of those Observables.
 
-  It is possible to supply an Observable as the start Observable.
+  ## It is possible to supply an Observable as the start Observable.
 
   More information: http://reactivex.io/documentation/operators/switch.html
   """
   def switch(initial_obs \\ nil, {observable_fn, _parent_pid}) do
     # Start the producer/consumer server.
     {:ok, pid} = GenObservable.start_link(Switch, [initial_obs])
+
+    observable_fn.(pid)
+
+    # Create the continuation.
+    {fn observer ->
+       GenObservable.send_to(pid, observer)
+     end, pid}
+  end
+
+  @doc """
+  Convert an Observable that emits Observables into a single Observable that 
+  emits the items emitted by the most-recently-emitted of those Observables.
+  Emits the last value of the new Observable if not nil upon switching.
+
+  ## It is possible to supply an initial Observable as the first argument.
+
+  More information: http://reactivex.io/documentation/operators/switch.html
+  """
+  def switch_repeat(initial_obs \\ nil, {observable_fn, _parent_pid}) do
+    # Start the producer/consumer server.
+    {:ok, pid} = GenObservable.start_link(SwitchRepeat, [initial_obs])
 
     observable_fn.(pid)
 
@@ -400,6 +429,28 @@ defmodule Observables.Obs do
      end, pid}
   end
 
+  @doc """
+  Takes two Observables and a 'switch' Observable.
+  Emits the values of the first Observable until the switch Observable emits a value,
+  at which point the resulting Observable switches and only emits values from the second Observable.
+  Emits the last value of the second Observable if not nil upon switching.
+  """
+
+  def until_repeat(obs1, obs2, obs_switch) do
+    {:ok, pid} = GenObservable.start_link(SwitchRepeat, [obs1])
+
+    #Transform the switch observable into an observable that emits only one value, namely the second observable
+    {switch_fn, _switch_pid} = obs_switch
+    |> take(1)
+    |> map(fn _ -> obs2 end)
+
+    switch_fn.(pid)
+
+    # Create the continuation.
+    {fn observer ->
+       GenObservable.send_to(pid, observer)
+     end, pid}
+  end
 
   @doc """
   Chunks items produces by the observable together bounded in time. 
