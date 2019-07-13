@@ -244,7 +244,7 @@ defmodule Observables.GenObservable do
   end
 
   @doc """
-  Sends a new_value message to this GenObservable, such that it procudes a new value
+  Sends a new_value message to this GenObservable, such that it produces a new value
   for its dependees.
   """
   def send_event(consumer, value) do

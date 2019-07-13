@@ -362,19 +362,44 @@ defmodule Observables.Obs do
   Convert an Observable that emits Observables into a single Observable that 
   emits the items emitted by the most-recently-emitted of those Observables.
 
+  It is possible to supply an Observable as the start Observable.
+
   More information: http://reactivex.io/documentation/operators/switch.html
   """
-  def switch({observable_fn, _parent_pid}) do
+  def switch(initial_obs \\ nil, {observable_fn, _parent_pid}) do
     # Start the producer/consumer server.
-    {:ok, pid} = GenObservable.start_link(Switch, [])
+    {:ok, pid} = GenObservable.start_link(Switch, [initial_obs])
 
     observable_fn.(pid)
 
-    # Creat the continuation.
+    # Create the continuation.
     {fn observer ->
        GenObservable.send_to(pid, observer)
      end, pid}
   end
+
+  @doc """
+  Takes two Observables and a 'switch' Observable.
+  Emits the values of the first Observable until the switch Observable emits a value,
+  at which point the resulting Observable switches and only emits values from the second Observable.  
+  """
+
+  def until(obs1, obs2, obs_switch) do
+    {:ok, pid} = GenObservable.start_link(Switch, [obs1])
+
+    #Transform the switch observable into an observable that emits only one value, namely the second observable
+    {switch_fn, _switch_pid} = obs_switch
+    |> take(1)
+    |> map(fn _ -> obs2 end)
+
+    switch_fn.(pid)
+
+    # Create the continuation.
+    {fn observer ->
+       GenObservable.send_to(pid, observer)
+     end, pid}
+  end
+
 
   @doc """
   Chunks items produces by the observable together bounded in time. 
