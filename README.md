@@ -14,7 +14,7 @@ by adding `observables_extended` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:observables_extended, "~> 0.3.2"}
+    {:observables_extended, "~> 0.3.3"}
   ]
 end
 ```
