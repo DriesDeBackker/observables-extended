@@ -12,6 +12,7 @@ defmodule Observables.Obs do
     Rotate,
     Map,
     Distinct,
+    Novel,
     Each,
     Filter,
     StartsWith,
@@ -288,10 +289,10 @@ defmodule Observables.Obs do
 
   @doc """
   Filters out values that have already been produced by any given observable.
-  Uses the default `==` function if none is given. 
-
-  The expected function should take 2 arguments, and return a boolean indication
-  the equality.
+  
+  Uses the default `==` function as a comparator if none is given. 
+  Any supplied comparator function should take 2 arguments, 
+  and return a boolean, indicating equality.
 
   More information: http://reactivex.io/documentation/operators/distinct.html
   """
@@ -305,6 +306,25 @@ defmodule Observables.Obs do
        GenObservable.send_to(pid, observer)
      end, pid}
   end
+
+  @doc """
+  Filters out values that are equal to the most recently produced value.
+  
+  Uses the default `==` function as a comparator if none is given. 
+  Any supplied comparator function should take 2 arguments, 
+  and return a boolean, indicating equality.
+  """
+  def novel({observable_fn, _parent_pid}, f \\ fn x, y -> x == y end) do
+    {:ok, pid} = GenObservable.start_link(Novel, [f])
+
+    observable_fn.(pid)
+
+    # Create the continuation.
+    {fn observer ->
+       GenObservable.send_to(pid, observer)
+     end, pid}
+  end
+
 
   @doc """
   Same as map, but returns the original value. Typically used for side effects.
