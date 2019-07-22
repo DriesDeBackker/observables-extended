@@ -222,6 +222,11 @@ defmodule Observables.GenObservable do
     {:noreply, state}
   end
 
+  def handle_info(:stop, state) do
+    cast(self(), :stop)
+    {:noreply, state}
+  end
+
   def terminate(_reason, _state) do
     :ok
   end

@@ -18,6 +18,7 @@ defmodule Observables.Obs do
     StartsWith,
     Buffer,
     Chunk,
+    Delay,
     Scan,
     Take,
     CombineLatest,
@@ -503,6 +504,20 @@ defmodule Observables.Obs do
   """
   def buffer({observable_fn, _parent_pid}, size) do
     {:ok, pid} = GenObservable.start_link(Buffer, [size])
+
+    observable_fn.(pid)
+
+    # Create the continuation.
+    {fn observer ->
+       GenObservable.send_to(pid, observer)
+     end, pid}
+  end
+
+  @doc """
+  Delays each produced item by the given interval.
+  """
+  def delay({observable_fn, _parent_pid}, interval) do
+    {:ok, pid} = GenObservable.start_link(Delay, [interval])
 
     observable_fn.(pid)
 
