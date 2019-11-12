@@ -6,7 +6,7 @@ defmodule Observables.GenObservable do
   alias Observables.GenObservable
   use GenServer
 
-  defstruct listeners: [], listeningto: [], last: nil, state: %{}, module: nil
+  defstruct listeners: [], interestedparties: [], listeningto: [], last: nil, state: %{}, module: nil
 
   @callback init(args :: term) :: any
 
@@ -84,6 +84,10 @@ defmodule Observables.GenObservable do
 
   def handle_cast({:listen_to, pid}, state) do
     {:noreply, %{state | listeningto: [pid | state.listeningto]}}
+  end
+
+  def handle_cast({:notify_done, pid}, state) do
+    {:noreply, %{state | interestedparties: [pid | state.interestedparties]}}
   end
 
   def handle_cast({:stop_sending_to, pid}, state) do
@@ -176,13 +180,13 @@ defmodule Observables.GenObservable do
 
   def handle_cast(:stop, state) do
     Logger.warn("#{inspect(self())} am stopping")
-    state.listeners
+    state.listeners ++ state.interestedparties
     |> Enum.map(fn obs -> cast(obs, {:dependency_stopping, self()}) end)
     {:stop, :normal, state}
   end
   def handle_cast({:stop, reason}, state) do
     Logger.warn("#{inspect(self())} am stopping for reason #{inspect(reason)}")
-    state.listeners
+    state.listeners ++ state.interestedparties
     |> Enum.map(fn obs -> cast(obs, {:dependency_stopping, self()}) end)
     {:stop, reason, state}
   end
@@ -237,11 +241,17 @@ defmodule Observables.GenObservable do
 
   @doc """
   Sends a message to observee_pid that observer_pid needs to be notified of new events.
-
   """
   def send_to(producer, consumer) do
     cast(producer, {:send_to, consumer})
     cast(consumer, {:listen_to, producer})
+  end
+
+  @doc """
+  Sends a message to observee_pid that interested_party_pid needs to be notified when done.
+  """
+  def notify_done(producer, interestedparty) do
+    cast(producer, {:notify_done, interestedparty})
   end
 
   @doc """
